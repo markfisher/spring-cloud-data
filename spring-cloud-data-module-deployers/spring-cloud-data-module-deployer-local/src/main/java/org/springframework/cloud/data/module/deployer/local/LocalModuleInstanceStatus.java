@@ -39,11 +39,10 @@ public class LocalModuleInstanceStatus implements ModuleInstanceStatus {
 
 	private final Map<String, String> attributes = new HashMap<String, String>();
 
-	// todo: this is just a simple placeholder, providing state as 'deployed' or 'unknown'
-	public LocalModuleInstanceStatus(String id, boolean deployed, Map<String, String> attributes) {
-		logger.trace("Local Module {}, deployed {}, attributes: {}", id, deployed, attributes);
+	public LocalModuleInstanceStatus(String id, ModuleStatus.State state, Map<String, String> attributes) {
+		logger.trace("Local Module {}, deployed {}, attributes: {}", id, state, attributes);
 		this.id = id;
-		this.state = deployed ? ModuleStatus.State.deployed : ModuleStatus.State.unknown;
+		this.state = state;
 		if (attributes != null) {
 			this.attributes.putAll(attributes);
 		}

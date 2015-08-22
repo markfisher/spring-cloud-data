@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.data.module.deployer.local;
 
-import org.junit.Ignore;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -24,7 +26,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.cloud.data.core.ModuleCoordinates;
 import org.springframework.cloud.data.core.ModuleDefinition;
+import org.springframework.cloud.data.core.ModuleDeploymentId;
 import org.springframework.cloud.data.core.ModuleDeploymentRequest;
+import org.springframework.cloud.data.module.ModuleStatus;
+import org.springframework.cloud.data.module.deployer.ModuleDeployer;
 import org.springframework.cloud.stream.module.launcher.ModuleLauncher;
 import org.springframework.cloud.stream.module.launcher.ModuleLauncherConfiguration;
 import org.springframework.test.annotation.DirtiesContext;
@@ -48,18 +53,18 @@ public class LocalModuleDeployerTests {
 	@Autowired
 	private ModuleLauncher moduleLauncher;
 
-	@Test @Ignore // see TODO below
-	public void timeToLogStream() {
+	@Test
+	public void timeToLogStream() throws InterruptedException {
 		LocalModuleDeployer deployer = new LocalModuleDeployer(moduleLauncher);
 		ModuleDefinition timeDefinition = new ModuleDefinition.Builder()
-				.setGroup("ticktock")
+				.setGroup("test")
 				.setName("time")
-				.setParameter("spring.cloud.stream.bindings.output", "ticktock.0")
+				.setParameter("spring.cloud.stream.bindings.output", "test.0")
 				.build();
 		ModuleDefinition logDefinition = new ModuleDefinition.Builder()
-				.setGroup("ticktock")
+				.setGroup("test")
 				.setName("log")
-				.setParameter("spring.cloud.stream.bindings.input", "ticktock.0")
+				.setParameter("spring.cloud.stream.bindings.input", "test.0")
 				.build();
 		ModuleCoordinates timeCoordinates = new ModuleCoordinates.Builder()
 				.setGroupId(GROUP_ID)
@@ -75,8 +80,37 @@ public class LocalModuleDeployerTests {
 				.build();
 		ModuleDeploymentRequest time = new ModuleDeploymentRequest(timeDefinition, timeCoordinates);
 		ModuleDeploymentRequest log = new ModuleDeploymentRequest(logDefinition, logCoordinates);
-		deployer.deploy(time);
-		deployer.deploy(log);
-		// TODO: check status, then undeploy
+		ModuleDeploymentId logId = deployer.deploy(log);
+		ModuleDeploymentId timeId = deployer.deploy(time);
+		waitForDeployment(deployer, timeId, logId);
+		deployer.undeploy(timeId);
+		deployer.undeploy(logId);
+		waitForUndeployment(deployer, timeId, logId);
+	}
+
+	private void waitForDeployment(ModuleDeployer deployer, ModuleDeploymentId... ids) throws InterruptedException {
+		waitForState(ModuleStatus.State.deployed, deployer, ids);
+	}
+
+	private void waitForUndeployment(ModuleDeployer deployer, ModuleDeploymentId... ids) throws InterruptedException {
+		// TODO: change when the 'undeployed' state is supported
+		waitForState(ModuleStatus.State.unknown, deployer, ids);
+	}
+
+	private void waitForState(ModuleStatus.State state, ModuleDeployer deployer, ModuleDeploymentId... ids)
+			throws InterruptedException {
+		List<ModuleDeploymentId> done = new ArrayList<>();
+		for (int i = 0; i < 60; i++) {
+			for (ModuleDeploymentId id : ids) {
+				if (state.equals(deployer.status(id).getState())) {
+					done.add(id);
+				}
+			}
+			if (ids.length == done.size()) {
+				return;
+			}
+			Thread.sleep(1000);
+		}
+		throw new IllegalStateException(String.format("timed out waiting for state '%s' for: %s", state, ids));
 	}
 }

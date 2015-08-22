@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.cloud.data.module.deployer.local;
 import java.net.Inet4Address;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import org.springframework.cloud.data.core.ModuleDeploymentRequest;
 import org.springframework.cloud.data.module.ModuleStatus;
 import org.springframework.cloud.data.module.deployer.ModuleDeployer;
 import org.springframework.cloud.stream.module.launcher.ModuleLauncher;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
 import org.springframework.util.SocketUtils;
 import org.springframework.web.client.RestTemplate;
@@ -91,8 +93,25 @@ public class LocalModuleDeployer implements ModuleDeployer {
 
 	@Override
 	public ModuleStatus status(ModuleDeploymentId id) {
-		boolean deployed = this.deployedModules.containsKey(id);
-		LocalModuleInstanceStatus status = new LocalModuleInstanceStatus(id.toString(), deployed, null);
+		ModuleStatus.State state = ModuleStatus.State.unknown;
+		boolean known = this.deployedModules.containsKey(id);
+		if (known) {
+			state = ModuleStatus.State.deploying;
+			try {
+				ResponseEntity<?> response = this.restTemplate.getForEntity(
+						this.deployedModules.get(id) + "/env", Object.class);
+				if (response.getStatusCode().is2xxSuccessful()) {
+					state = ModuleStatus.State.deployed;
+				}
+			}
+			catch (Exception e) {
+				// ignore
+			}
+		}
+		Map<String, String> attributes = (known)
+				? Collections.<String, String>singletonMap("url", this.deployedModules.get(id).toString())
+				: Collections.<String, String>emptyMap();
+		LocalModuleInstanceStatus status = new LocalModuleInstanceStatus(id.toString(), state, attributes);
 		return ModuleStatus.of(id).with(status).build();
 	}
 
