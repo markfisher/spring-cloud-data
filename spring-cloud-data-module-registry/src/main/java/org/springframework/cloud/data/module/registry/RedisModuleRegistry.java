@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.data.module.registry;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.cloud.data.core.ModuleCoordinates;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
@@ -31,7 +33,7 @@ public class RedisModuleRegistry implements ModuleRegistry {
 	/**
 	 * Prefix for keys used for storing module coordinates.
 	 */
-	public static final String KEY_PREFIX = "spring.cloud.module";
+	public static final String KEY_PREFIX = "spring.cloud.module.";
 
 	/**
 	 * Group ID for default modules.
@@ -57,14 +59,14 @@ public class RedisModuleRegistry implements ModuleRegistry {
 	 */
 	public RedisModuleRegistry(RedisConnectionFactory redisConnectionFactory) {
 		redisOperations = new StringRedisTemplate(redisConnectionFactory);
-		populateDefaults();
 	}
 
 	/**
 	 * Populate the registry with default module coordinates; will
 	 * not overwrite existing values.
 	 */
-	private void populateDefaults() {
+	@PostConstruct
+	public void populateDefaults() {
 		populateDefault("http", "source");
 		populateDefault("time", "source");
 		populateDefault("filter", "processor");
@@ -83,8 +85,8 @@ public class RedisModuleRegistry implements ModuleRegistry {
 	 * @param type module type
 	 */
 	private void populateDefault(String name, String type) {
-		redisOperations.boundValueOps(keyFor(name, type))
-				.setIfAbsent(defaultCoordinatesFor(name + '-' + type).toString());
+		redisOperations.boundHashOps(KEY_PREFIX + type).putIfAbsent(name,
+				defaultCoordinatesFor(name + '-' + type).toString());
 	}
 
 	/**
@@ -99,19 +101,7 @@ public class RedisModuleRegistry implements ModuleRegistry {
 
 	@Override
 	public ModuleCoordinates findByNameAndType(String name, String type) {
-		String coordinates = redisOperations.boundValueOps(keyFor(name, type)).get();
+		String coordinates = redisOperations.<String, String>boundHashOps(KEY_PREFIX + type).get(name);
 		return (coordinates == null ? null : ModuleCoordinates.parse(coordinates));
 	}
-
-	/**
-	 * Return the key for the given module name and type.
-	 *
-	 * @param name module name
-	 * @param type module type
-	 * @return key for the given module name and type
-	 */
-	private String keyFor(String name, String type) {
-		return String.format("%s:%s:%s", KEY_PREFIX, type, name);
-	}
-
 }
