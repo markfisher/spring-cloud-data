@@ -30,7 +30,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.data.admin.AdminApplication;
 import org.springframework.cloud.data.admin.config.AdminConfiguration;
 import org.springframework.cloud.data.module.registry.ModuleRegistry;
-import org.springframework.cloud.data.module.registry.StubModuleRegistry;
+import org.springframework.cloud.data.module.registry.InMemoryModuleRegistry;
 import org.springframework.cloud.data.shell.command.StreamCommandTemplate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -200,7 +200,7 @@ public abstract class AbstractShellIntegrationTest {
 
 		@Bean
 		public ModuleRegistry moduleRegistry() {
-			return new StubModuleRegistry();
+			return new InMemoryModuleRegistry();
 		}
 
 	}

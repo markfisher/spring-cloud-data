@@ -80,6 +80,11 @@ public class AdminConfiguration {
 		return new RedisModuleRegistry(redisConnectionFactory);
 	}
 
+	@Bean
+	public ModuleRegistryPopulator moduleRegistryPopulator(ModuleRegistry moduleRegistry) {
+		return new ModuleRegistryPopulator(moduleRegistry);
+	}
+
 	@Configuration
 	@Conditional(LocalCondition.class)
 	@Import(ModuleLauncherConfiguration.class)

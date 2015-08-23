@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.data.module.registry;
 
-import javax.annotation.PostConstruct;
-
 import org.springframework.cloud.data.core.ModuleCoordinates;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
@@ -27,6 +25,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
  * {@link ModuleRegistry} implementation backed by Redis.
  *
  * @author Patrick Peralta
+ * @author Mark Fisher
  */
 public class RedisModuleRegistry implements ModuleRegistry {
 
@@ -34,16 +33,6 @@ public class RedisModuleRegistry implements ModuleRegistry {
 	 * Prefix for keys used for storing module coordinates.
 	 */
 	public static final String KEY_PREFIX = "spring.cloud.module.";
-
-	/**
-	 * Group ID for default modules.
-	 */
-	private static final String GROUP_ID = "org.springframework.cloud.stream.module";
-
-	/**
-	 * Version number for default modules.
-	 */
-	private static final String VERSION = "1.0.0.BUILD-SNAPSHOT";
 
 	/**
 	 * Redis operations template.
@@ -61,47 +50,15 @@ public class RedisModuleRegistry implements ModuleRegistry {
 		redisOperations = new StringRedisTemplate(redisConnectionFactory);
 	}
 
-	/**
-	 * Populate the registry with default module coordinates; will
-	 * not overwrite existing values.
-	 */
-	@PostConstruct
-	public void populateDefaults() {
-		populateDefault("http", "source");
-		populateDefault("time", "source");
-		populateDefault("filter", "processor");
-		populateDefault("groovy-filter", "processor");
-		populateDefault("groovy-transform", "processor");
-		populateDefault("transform", "processor");
-		populateDefault("counter", "sink");
-		populateDefault("log", "sink");
-	}
-
-	/**
-	 * Populate the registry with default values for the provided
-	 * module name and type; will not overwrite existing values.
-	 *
-	 * @param name module name
-	 * @param type module type
-	 */
-	private void populateDefault(String name, String type) {
-		redisOperations.boundHashOps(KEY_PREFIX + type).putIfAbsent(name,
-				defaultCoordinatesFor(name + '-' + type).toString());
-	}
-
-	/**
-	 * Return the default coordinates for the provided module name.
-	 *
-	 * @param moduleName module name for which to provide default coordinates
-	 * @return default coordinates for the provided module
-	 */
-	private ModuleCoordinates defaultCoordinatesFor(String moduleName) {
-		return ModuleCoordinates.parse(String.format("%s:%s:%s", GROUP_ID, moduleName, VERSION));
-	}
-
 	@Override
 	public ModuleCoordinates findByNameAndType(String name, String type) {
 		String coordinates = redisOperations.<String, String>boundHashOps(KEY_PREFIX + type).get(name);
 		return (coordinates == null ? null : ModuleCoordinates.parse(coordinates));
 	}
+
+	@Override
+	public void save(String name, String type, ModuleCoordinates coordinates) {
+		redisOperations.boundHashOps(KEY_PREFIX + type).put(name, coordinates.toString());
+	}
+
 }
