@@ -244,10 +244,7 @@ public class DefaultYarnCloudAppService implements YarnCloudAppService {
 
 	private <R> String runApp(AbstractClientApplication<R,?> app) {
 		R result = app.run(SPRING_CONFIG_NAME_OPTION + this.bootstrapName);
-		if (result instanceof String) {
-			return (String) result;
-		}
-		return result.toString();
+		return result != null ? result.toString() : null;
 	}
 
 }
