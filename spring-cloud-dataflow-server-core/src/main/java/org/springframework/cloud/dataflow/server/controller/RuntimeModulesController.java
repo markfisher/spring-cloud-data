@@ -52,7 +52,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/runtime/modules")
 @ExposesResourceFor(AppStatusResource.class)
-@ConditionalOnBean(AppDeployer.class)
+//@ConditionalOnBean(AppDeployer.class)
 public class RuntimeModulesController {
 
 	private static final Comparator<? super AppInstanceStatus> INSTANCE_SORTER = new Comparator<AppInstanceStatus>() {
@@ -127,7 +127,7 @@ public class RuntimeModulesController {
 	@RestController
 	@RequestMapping("/runtime/modules/{moduleId}/instances")
 	@ExposesResourceFor(AppInstanceStatusResource.class)
-	@ConditionalOnBean(AppDeployer.class)
+	//@ConditionalOnBean(AppDeployer.class)
 	public static class InstanceController {
 
 		private final Collection<AppDeployer> appDeployers;

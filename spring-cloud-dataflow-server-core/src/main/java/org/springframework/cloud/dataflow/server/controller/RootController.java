@@ -47,7 +47,7 @@ import org.springframework.web.util.UriComponents;
  * @author Mark Fisher
  */
 @RestController
-@ConditionalOnBean(AppDeployer.class)
+//@ConditionalOnBean(AppDeployer.class)
 public class RootController {
 
 	/**

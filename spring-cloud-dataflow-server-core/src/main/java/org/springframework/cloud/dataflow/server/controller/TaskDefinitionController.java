@@ -50,7 +50,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/tasks/definitions")
 @ExposesResourceFor(TaskDefinitionResource.class)
-@ConditionalOnBean(TaskLauncher.class)
+//@ConditionalOnBean(TaskLauncher.class)
 public class TaskDefinitionController {
 
 	private final Assembler taskAssembler = new Assembler();

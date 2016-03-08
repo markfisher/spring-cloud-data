@@ -59,7 +59,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/tasks/deployments")
 @ExposesResourceFor(TaskDeploymentResource.class)
-@ConditionalOnBean(TaskLauncher.class)
+//@ConditionalOnBean(TaskLauncher.class)
 public class TaskDeploymentController {
 
 	private static final String DEFAULT_TASK_DATASOURCE_URL = "jdbc:h2:tcp://localhost:19092/mem:dataflow";

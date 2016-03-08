@@ -67,7 +67,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/streams/deployments")
 @ExposesResourceFor(StreamDeploymentResource.class)
-@ConditionalOnBean(AppDeployer.class)
+//@ConditionalOnBean(AppDeployer.class)
 public class StreamDeploymentController {
 
 	private static final String INSTANCE_COUNT_PROPERTY_KEY = "count";

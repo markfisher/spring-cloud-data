@@ -60,7 +60,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/streams/definitions")
 @ExposesResourceFor(StreamDefinitionResource.class)
-@ConditionalOnBean(AppDeployer.class)
+//@ConditionalOnBean(AppDeployer.class)
 public class StreamDefinitionController {
 
 	private static final Logger logger = LoggerFactory.getLogger(StreamDefinitionController.class);
