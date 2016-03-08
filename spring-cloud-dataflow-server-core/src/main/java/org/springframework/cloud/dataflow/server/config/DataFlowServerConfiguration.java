@@ -42,7 +42,6 @@ import org.springframework.cloud.dataflow.completion.CompletionConfiguration;
 import org.springframework.cloud.dataflow.completion.RecoveryStrategy;
 import org.springframework.cloud.dataflow.completion.StreamCompletionProvider;
 import org.springframework.cloud.dataflow.server.completion.TapOnDestinationRecoveryStrategy;
-import org.springframework.cloud.dataflow.server.controller.StreamDefinitionController;
 import org.springframework.cloud.dataflow.server.repository.InMemoryStreamDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.InMemoryTaskDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;
@@ -81,14 +80,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * @author Josh Long
  */
 @Configuration
-@EnableHypermediaSupport(type = HAL)
 @EnableSpringDataWebSupport
+@EnableHypermediaSupport(type = HAL)
 @Import(CompletionConfiguration.class)
 @EnableConfigurationProperties(DataFlowServerProperties.class)
-@ComponentScan(basePackageClasses = {
-		StreamDefinitionController.class,
-		StreamDefinitionRepository.class
-})
+@ComponentScan(basePackageClasses = StreamDefinitionRepository.class)
 @EnableAutoConfiguration(exclude = OAuth2AutoConfiguration.class)
 public class DataFlowServerConfiguration {
 

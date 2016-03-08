@@ -16,13 +16,16 @@
 
 package org.springframework.cloud.dataflow.server.controller;
 
-import org.springframework.cloud.dataflow.rest.resource.AppInstanceStatusResource;
-import org.springframework.cloud.dataflow.rest.resource.AppStatusResource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.cloud.dataflow.module.deployer.ModuleDeployer;
 import org.springframework.cloud.dataflow.rest.resource.CompletionProposalsResource;
 import org.springframework.cloud.dataflow.rest.resource.CounterResource;
 import org.springframework.cloud.dataflow.rest.resource.FieldValueCounterResource;
 import org.springframework.cloud.dataflow.rest.resource.LibraryRegistrationResource;
+import org.springframework.cloud.dataflow.rest.resource.ModuleInstanceStatusResource;
 import org.springframework.cloud.dataflow.rest.resource.ModuleRegistrationResource;
+import org.springframework.cloud.dataflow.rest.resource.ModuleStatusResource;
 import org.springframework.cloud.dataflow.rest.resource.StreamDefinitionResource;
 import org.springframework.cloud.dataflow.rest.resource.StreamDeploymentResource;
 import org.springframework.cloud.dataflow.rest.resource.TaskDefinitionResource;
@@ -41,10 +44,11 @@ import org.springframework.web.util.UriComponents;
  * @author Patrick Peralta
  * @author Ilayaperumal Gopinathan
  * @author Glenn Renfro
- * @author Mark Fisher
  */
 @RestController
-public class RootController {
+@ConditionalOnBean(ModuleDeployer.class)
+@Deprecated
+public class DeprecatedRootController {
 
 	/**
 	 * Contains links pointing to controllers backing an entity type
@@ -57,7 +61,8 @@ public class RootController {
 	 *
 	 * @param entityLinks holder of links to controllers and their associated entity types
 	 */
-	public RootController(EntityLinks entityLinks) {
+	@Autowired
+	public DeprecatedRootController(EntityLinks entityLinks) {
 		this.entityLinks = entityLinks;
 	}
 
@@ -97,10 +102,10 @@ public class RootController {
 
 		resourceSupport.add(entityLinks.linkToCollectionResource(LibraryRegistrationResource.class).withRel("libraries"));
 
-		resourceSupport.add(entityLinks.linkToCollectionResource(AppStatusResource.class).withRel("runtime/modules"));
-		resourceSupport.add(unescapeTemplateVariables(entityLinks.linkForSingleResource(AppStatusResource.class, "{moduleId}").withRel("runtime/modules/module")));
+		resourceSupport.add(entityLinks.linkToCollectionResource(ModuleStatusResource.class).withRel("runtime/modules"));
+		resourceSupport.add(unescapeTemplateVariables(entityLinks.linkForSingleResource(ModuleStatusResource.class, "{moduleId}").withRel("runtime/modules/module")));
 
-		resourceSupport.add(unescapeTemplateVariables(entityLinks.linkFor(AppInstanceStatusResource.class, UriComponents.UriTemplateVariables.SKIP_VALUE).withRel("runtime/modules/instances")));
+		resourceSupport.add(unescapeTemplateVariables(entityLinks.linkFor(ModuleInstanceStatusResource.class, UriComponents.UriTemplateVariables.SKIP_VALUE).withRel("runtime/modules/instances")));
 
 		templated = entityLinks.linkFor(CompletionProposalsResource.class).withSelfRel().getHref() + ("/stream{?start,detailLevel}");
 		resourceSupport.add(new Link(templated).withRel("completions/stream"));

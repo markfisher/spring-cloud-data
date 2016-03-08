@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cloud.dataflow.artifact.registry.ArtifactRegistration;
 import org.springframework.cloud.dataflow.artifact.registry.ArtifactRegistry;
 import org.springframework.cloud.dataflow.core.ArtifactCoordinates;
@@ -30,19 +32,16 @@ import org.springframework.cloud.dataflow.core.ArtifactType;
 import org.springframework.cloud.dataflow.core.BindingPropertyKeys;
 import org.springframework.cloud.dataflow.core.ModuleDefinition;
 import org.springframework.cloud.dataflow.core.ModuleDeploymentId;
+import org.springframework.cloud.dataflow.core.ModuleDeploymentRequest;
 import org.springframework.cloud.dataflow.core.StreamDefinition;
 import org.springframework.cloud.dataflow.core.StreamPropertyKeys;
 import org.springframework.cloud.dataflow.module.DeploymentState;
+import org.springframework.cloud.dataflow.module.ModuleStatus;
 import org.springframework.cloud.dataflow.module.deployer.ModuleDeployer;
 import org.springframework.cloud.dataflow.rest.resource.StreamDeploymentResource;
 import org.springframework.cloud.dataflow.rest.util.DeploymentPropertiesUtils;
 import org.springframework.cloud.dataflow.server.repository.NoSuchStreamDefinitionException;
 import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;
-import org.springframework.cloud.deployer.resource.maven.MavenResource;
-import org.springframework.cloud.deployer.spi.app.AppDeployer;
-import org.springframework.cloud.deployer.spi.app.AppStatus;
-import org.springframework.cloud.deployer.spi.core.AppDefinition;
-import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.hateoas.ExposesResourceFor;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.Assert;
@@ -66,7 +65,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/streams/deployments")
 @ExposesResourceFor(StreamDeploymentResource.class)
-public class StreamDeploymentController {
+@ConditionalOnBean(ModuleDeployer.class)
+@Deprecated
+public class DeprecatedStreamDeploymentController {
 
 	private static final String INSTANCE_COUNT_PROPERTY_KEY = "count";
 
@@ -78,30 +79,30 @@ public class StreamDeploymentController {
 	private final StreamDefinitionRepository repository;
 
 	/**
-	 * The artifact registry this controller will use to look up app and library coordinates.
+	 * The artifact registry this controller will use to look up modules and libraries.
 	 */
 	private final ArtifactRegistry registry;
 
 	/**
-	 * The deployer this controller will use to deploy stream apps.
+	 * The deployer this controller will use to deploy stream modules.
 	 */
-	private final AppDeployer deployer;
+	private final ModuleDeployer deployer;
 
 	/**
 	 * Create a {@code StreamDeploymentController} that delegates
 	 * <ul>
 	 *     <li>CRUD operations to the provided {@link StreamDefinitionRepository}</li>
-	 *     <li>app coordinate retrieval to the provided {@link ArtifactRegistry}</li>
-	 *     <li>deployment operations to the provided {@link AppDeployer}</li>
+	 *     <li>module coordinate retrieval to the provided {@link ArtifactRegistry}</li>
+	 *     <li>deployment operations to the provided {@link ModuleDeployer}</li>
 	 * </ul>
 	 *
 	 * @param repository  the repository this controller will use for stream CRUD operations
-	 * @param registry    artifact registry this controller will use to look up apps
-	 * @param deployer    the deployer this controller will use to deploy stream apps
+	 * @param registry    artifact registry this controller will use to look up modules
+	 * @param deployer    the deployer this controller will use to deploy stream modules
 	 */
 	@Autowired
-	public StreamDeploymentController(StreamDefinitionRepository repository, ArtifactRegistry registry,
-			AppDeployer deployer) {
+	public DeprecatedStreamDeploymentController(StreamDefinitionRepository repository, ArtifactRegistry registry,
+			@Qualifier("processModuleDeployer") ModuleDeployer deployer) {
 		Assert.notNull(repository, "repository must not be null");
 		Assert.notNull(registry, "registry must not be null");
 		Assert.notNull(deployer, "deployer must not be null");
@@ -193,17 +194,13 @@ public class StreamDeploymentController {
 
 			currentModule = postProcessLibraryProperties(currentModule);
 
-			AppDefinition definition = new AppDefinition(currentModule.getLabel(), currentModule.getParameters());
-			MavenResource resource = MavenResource.parse(coordinates.toString());
-			AppDeploymentRequest request = new AppDeploymentRequest(definition, resource, moduleDeploymentProperties);
-			this.deployer.deploy(request);
+			this.deployer.deploy(new ModuleDeploymentRequest(currentModule, coordinates, moduleDeploymentProperties));
 		}
 	}
 
 	/**
-	 * Looks at parameters of a module that represent maven coordinates and, if
-	 * a simple name has been used, resolve it from the {@link ArtifactRegistry}
-	 * .
+	 * Looks at parameters of a module that represent maven coordinates and, if a simple name has been used,
+	 * resolve it from the {@link ArtifactRegistry}.
 	 */
 	private ModuleDefinition postProcessLibraryProperties(ModuleDefinition module) {
 		String includes = module.getParameters().get("includes");
@@ -382,8 +379,8 @@ public class StreamDeploymentController {
 	 */
 	private void undeployStream(StreamDefinition stream) {
 		for (ModuleDefinition module : stream.getModuleDefinitions()) {
-			String id = ModuleDeploymentId.fromModuleDefinition(module).toString();
-			AppStatus status = this.deployer.status(id);
+			ModuleDeploymentId id = ModuleDeploymentId.fromModuleDefinition(module);
+			ModuleStatus status = this.deployer.status(id);
 			if (!EnumSet.of(DeploymentState.unknown, DeploymentState.undeployed)
 					.contains(status.getState())) {
 				this.deployer.undeploy(id);
