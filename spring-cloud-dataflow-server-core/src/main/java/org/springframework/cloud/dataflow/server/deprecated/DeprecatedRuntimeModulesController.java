@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.controller;
+package org.springframework.cloud.dataflow.server.deprecated;
 
 import java.util.ArrayList;
 import java.util.Collection;

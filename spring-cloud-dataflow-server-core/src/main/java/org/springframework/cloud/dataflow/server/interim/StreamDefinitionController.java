@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.controller;
+package org.springframework.cloud.dataflow.server.interim;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cloud.dataflow.core.ModuleDefinition;
 import org.springframework.cloud.dataflow.core.ModuleDeploymentId;
 import org.springframework.cloud.dataflow.core.StreamDefinition;
@@ -60,7 +59,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/streams/definitions")
 @ExposesResourceFor(StreamDefinitionResource.class)
-@ConditionalOnBean(AppDeployer.class)
 public class StreamDefinitionController {
 
 	private static final Logger logger = LoggerFactory.getLogger(StreamDefinitionController.class);

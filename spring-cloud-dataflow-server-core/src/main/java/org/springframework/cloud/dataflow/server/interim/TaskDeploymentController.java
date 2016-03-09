@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.controller;
+package org.springframework.cloud.dataflow.server.interim;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cloud.dataflow.artifact.registry.ArtifactRegistration;
 import org.springframework.cloud.dataflow.artifact.registry.ArtifactRegistry;
 import org.springframework.cloud.dataflow.core.ArtifactCoordinates;
@@ -59,7 +58,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/tasks/deployments")
 @ExposesResourceFor(TaskDeploymentResource.class)
-@ConditionalOnBean(TaskLauncher.class)
 public class TaskDeploymentController {
 
 	private static final String DEFAULT_TASK_DATASOURCE_URL = "jdbc:h2:tcp://localhost:19092/mem:dataflow";

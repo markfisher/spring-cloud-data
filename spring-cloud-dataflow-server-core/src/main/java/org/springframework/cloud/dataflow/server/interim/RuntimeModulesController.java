@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.controller;
+package org.springframework.cloud.dataflow.server.interim;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,7 +52,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/runtime/modules")
 @ExposesResourceFor(AppStatusResource.class)
-@ConditionalOnBean(AppDeployer.class)
 public class RuntimeModulesController {
 
 	private static final Comparator<? super AppInstanceStatus> INSTANCE_SORTER = new Comparator<AppInstanceStatus>() {
