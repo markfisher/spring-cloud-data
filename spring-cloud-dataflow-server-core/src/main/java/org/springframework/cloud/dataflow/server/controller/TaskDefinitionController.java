@@ -24,6 +24,7 @@ import org.springframework.cloud.dataflow.rest.resource.TaskDefinitionResource;
 import org.springframework.cloud.dataflow.server.repository.NoSuchTaskDefinitionException;
 import org.springframework.cloud.dataflow.server.repository.TaskDefinitionRepository;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
+import org.springframework.cloud.deployer.spi.task.TaskStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.ExposesResourceFor;
@@ -137,7 +138,9 @@ public class TaskDefinitionController {
 					ModuleDeploymentId.fromModuleDefinition(taskDefinition.getModuleDefinition());
 			TaskDefinitionResource taskDefinitionResource = new TaskDefinitionResource(taskDefinition.getName(),
 					taskDefinition.getDslText());
-			taskDefinitionResource.setStatus(taskLauncher.status(id.toString()).getState().name());
+			TaskStatus status = taskLauncher.status(id.getLabel().toString());
+			String state = (status != null) ? status.getState().name() : "unknown";
+			taskDefinitionResource.setStatus(state);
 			return taskDefinitionResource;
 		}
 	}
