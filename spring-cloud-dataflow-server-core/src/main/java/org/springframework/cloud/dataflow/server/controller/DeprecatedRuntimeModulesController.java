@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.deprecated;
+package org.springframework.cloud.dataflow.server.controller;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -128,7 +128,6 @@ public class DeprecatedRuntimeModulesController {
 	@RestController
 	@RequestMapping("/runtime/modules/{moduleId}/instances")
 	@ExposesResourceFor(ModuleInstanceStatusResource.class)
-	@ConditionalOnBean(ModuleDeployer.class)
 	public static class DeprecatedInstanceController {
 
 		private final Collection<ModuleDeployer> moduleDeployers;

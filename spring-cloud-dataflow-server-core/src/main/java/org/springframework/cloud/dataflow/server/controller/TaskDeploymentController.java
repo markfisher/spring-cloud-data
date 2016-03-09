@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.interim;
+package org.springframework.cloud.dataflow.server.controller;
 
 import java.util.HashMap;
 import java.util.Map;

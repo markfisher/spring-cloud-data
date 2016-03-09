@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.deprecated;
+package org.springframework.cloud.dataflow.server.controller;
 
 import java.util.HashMap;
 import java.util.Map;

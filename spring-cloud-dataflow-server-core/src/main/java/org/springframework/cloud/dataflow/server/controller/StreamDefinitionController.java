@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.interim;
+package org.springframework.cloud.dataflow.server.controller;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -22,7 +22,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.dataflow.core.ModuleDefinition;
 import org.springframework.cloud.dataflow.core.ModuleDeploymentId;
 import org.springframework.cloud.dataflow.core.StreamDefinition;
@@ -94,7 +93,6 @@ public class StreamDefinitionController {
 	 * @param deploymentController the deployment controller to delegate deployment operations
 	 * @param deployer             the deployer this controller will use to compute deployment status
 	 */
-	@Autowired
 	public StreamDefinitionController(StreamDefinitionRepository repository,
 			StreamDeploymentController deploymentController, AppDeployer deployer) {
 		Assert.notNull(repository, "repository must not be null");

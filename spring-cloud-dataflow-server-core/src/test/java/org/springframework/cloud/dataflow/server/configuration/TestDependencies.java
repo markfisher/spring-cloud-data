@@ -24,11 +24,11 @@ import org.springframework.cloud.dataflow.artifact.registry.InMemoryArtifactRegi
 import org.springframework.cloud.dataflow.completion.CompletionConfiguration;
 import org.springframework.cloud.dataflow.server.config.ArtifactRegistryPopulator;
 import org.springframework.cloud.dataflow.server.controller.RestControllerAdvice;
+import org.springframework.cloud.dataflow.server.controller.StreamDefinitionController;
+import org.springframework.cloud.dataflow.server.controller.StreamDeploymentController;
+import org.springframework.cloud.dataflow.server.controller.TaskDefinitionController;
+import org.springframework.cloud.dataflow.server.controller.TaskDeploymentController;
 import org.springframework.cloud.dataflow.server.controller.TaskExecutionController;
-import org.springframework.cloud.dataflow.server.interim.StreamDefinitionController;
-import org.springframework.cloud.dataflow.server.interim.StreamDeploymentController;
-import org.springframework.cloud.dataflow.server.interim.TaskDefinitionController;
-import org.springframework.cloud.dataflow.server.interim.TaskDeploymentController;
 import org.springframework.cloud.dataflow.server.repository.InMemoryStreamDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.InMemoryTaskDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;

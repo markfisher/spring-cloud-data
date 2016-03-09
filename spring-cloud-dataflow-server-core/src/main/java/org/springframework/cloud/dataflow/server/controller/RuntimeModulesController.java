@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.dataflow.server.interim;
+package org.springframework.cloud.dataflow.server.controller;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -126,13 +126,12 @@ public class RuntimeModulesController {
 	@RestController
 	@RequestMapping("/runtime/modules/{moduleId}/instances")
 	@ExposesResourceFor(AppInstanceStatusResource.class)
-	@ConditionalOnBean(AppDeployer.class)
-	public static class InstanceController {
+	public static class AppInstanceController {
 
 		private final Collection<AppDeployer> appDeployers;
 
 		@Autowired
-		public InstanceController(Collection<AppDeployer> appDeployers) {
+		public AppInstanceController(Collection<AppDeployer> appDeployers) {
 			this.appDeployers = new HashSet<>(appDeployers);
 		}
 
@@ -177,7 +176,7 @@ public class RuntimeModulesController {
 		private final AppStatus owningModule;
 
 		public InstanceAssembler(AppStatus owningModule) {
-			super(InstanceController.class, AppInstanceStatusResource.class);
+			super(AppInstanceController.class, AppInstanceStatusResource.class);
 			this.owningModule = owningModule;
 		}
 
