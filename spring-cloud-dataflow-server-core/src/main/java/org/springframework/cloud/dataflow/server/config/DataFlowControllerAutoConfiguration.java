@@ -148,7 +148,7 @@ public class DataFlowControllerAutoConfiguration {
 		return new MavenConfigurationProperties();
 	}
 
-	@ConfigurationProperties(prefix = "mvn")
+	@ConfigurationProperties(prefix = "maven")
 	static class MavenConfigurationProperties extends MavenProperties {
 	}
 }
