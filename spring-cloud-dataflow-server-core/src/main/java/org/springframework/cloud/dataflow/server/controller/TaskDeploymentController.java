@@ -32,6 +32,7 @@ import org.springframework.cloud.dataflow.rest.resource.TaskDeploymentResource;
 import org.springframework.cloud.dataflow.rest.util.DeploymentPropertiesUtils;
 import org.springframework.cloud.dataflow.server.repository.NoSuchTaskDefinitionException;
 import org.springframework.cloud.dataflow.server.repository.TaskDefinitionRepository;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
@@ -89,21 +90,28 @@ public class TaskDeploymentController {
 	private final ArtifactRegistry registry;
 
 	/**
+	 * Properties for the resolution of Maven artifacts.
+	 */
+	private final MavenProperties mavenProperties;
+
+	/**
 	 * Creates a {@code TaskDeploymentController} that delegates launching
 	 * operations to the provided {@link TaskLauncher}
 	 * @param repository the repository this controller will use for task CRUD operations.
 	 * @param registry artifact registry this controller will use to look up app coordinates.
-	 * @param deployer the deployer this controller will use to launch task apps.
+	 * @param launcher the launcher this controller will use to launch task apps.
+	 * @param mavenProperties  properties for the resolution of Maven artifacts
 	 */
 	@Autowired
 	public TaskDeploymentController(TaskDefinitionRepository repository, ArtifactRegistry registry,
-			TaskLauncher taskLauncher) {
+			TaskLauncher taskLauncher, MavenProperties mavenProperties) {
 		Assert.notNull(repository, "repository must not be null");
 		Assert.notNull(registry, "registry must not be null");
 		Assert.notNull(taskLauncher, "TaskLauncher must not be null");
 		this.repository = repository;
 		this.registry = registry;
 		this.taskLauncher = taskLauncher;
+		this.mavenProperties = mavenProperties;
 	}
 
 	/**
@@ -137,7 +145,7 @@ public class TaskDeploymentController {
 				+ "-" + System.currentTimeMillis());
 
 		AppDefinition definition = new AppDefinition(module.getLabel(), module.getParameters());
-		MavenResource resource = MavenResource.parse(coordinates.toString());
+		MavenResource resource = MavenResource.parse(coordinates.toString(), mavenProperties);
 		AppDeploymentRequest request = new AppDeploymentRequest(definition, resource, deploymentProperties);
 		this.taskLauncher.launch(request);
 	}

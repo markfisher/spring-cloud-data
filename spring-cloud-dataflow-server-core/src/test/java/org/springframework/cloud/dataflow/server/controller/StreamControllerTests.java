@@ -54,10 +54,9 @@ import org.springframework.cloud.dataflow.core.BindingPropertyKeys;
 import org.springframework.cloud.dataflow.core.ModuleDefinition;
 import org.springframework.cloud.dataflow.core.StreamDefinition;
 import org.springframework.cloud.dataflow.server.configuration.TestDependencies;
-import org.springframework.cloud.dataflow.server.controller.StreamDefinitionController;
-import org.springframework.cloud.dataflow.server.controller.StreamDeploymentController;
 import org.springframework.cloud.dataflow.server.repository.InMemoryStreamDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
@@ -93,6 +92,8 @@ public class StreamControllerTests {
 	@Autowired
 	private AppDeployer appDeployer;
 
+	private final MavenProperties mavenProperties = new MavenProperties();
+
 	@Before
 	public void setupMockMVC() {
 		this.mockMvc = MockMvcBuilders.webAppContextSetup(wac).defaultRequest(
@@ -107,7 +108,9 @@ public class StreamControllerTests {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testConstructorMissingRepository() {
-		StreamDeploymentController deploymentController = new StreamDeploymentController(new InMemoryStreamDefinitionRepository(), new InMemoryArtifactRegistry(), appDeployer);
+		StreamDeploymentController deploymentController = new StreamDeploymentController(
+				new InMemoryStreamDefinitionRepository(), new InMemoryArtifactRegistry(),
+				appDeployer, mavenProperties);
 		new StreamDefinitionController(null, deploymentController, appDeployer);
 	}
 
@@ -118,7 +121,9 @@ public class StreamControllerTests {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testConstructorMissingDeployer() {
-		StreamDeploymentController deploymentController = new StreamDeploymentController(new InMemoryStreamDefinitionRepository(), new InMemoryArtifactRegistry(), appDeployer);
+		StreamDeploymentController deploymentController = new StreamDeploymentController(
+				new InMemoryStreamDefinitionRepository(), new InMemoryArtifactRegistry(),
+				appDeployer, mavenProperties);
 		new StreamDefinitionController(new InMemoryStreamDefinitionRepository(), deploymentController, null);
 	}
 

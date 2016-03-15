@@ -38,6 +38,7 @@ import org.springframework.cloud.dataflow.rest.resource.StreamDeploymentResource
 import org.springframework.cloud.dataflow.rest.util.DeploymentPropertiesUtils;
 import org.springframework.cloud.dataflow.server.repository.NoSuchStreamDefinitionException;
 import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
@@ -88,6 +89,11 @@ public class StreamDeploymentController {
 	private final AppDeployer deployer;
 
 	/**
+	 * Properties for the resolution of Maven artifacts.
+	 */
+	private final MavenProperties mavenProperties;
+
+	/**
 	 * Create a {@code StreamDeploymentController} that delegates
 	 * <ul>
 	 *     <li>CRUD operations to the provided {@link StreamDefinitionRepository}</li>
@@ -95,19 +101,21 @@ public class StreamDeploymentController {
 	 *     <li>deployment operations to the provided {@link AppDeployer}</li>
 	 * </ul>
 	 *
-	 * @param repository  the repository this controller will use for stream CRUD operations
-	 * @param registry    artifact registry this controller will use to look up apps
-	 * @param deployer    the deployer this controller will use to deploy stream apps
+	 * @param repository       the repository this controller will use for stream CRUD operations
+	 * @param registry         artifact registry this controller will use to look up apps
+	 * @param deployer         the deployer this controller will use to deploy stream apps
+	 * @param mavenProperties  properties for the resolution of Maven artifacts
 	 */
 	@Autowired
 	public StreamDeploymentController(StreamDefinitionRepository repository, ArtifactRegistry registry,
-			AppDeployer deployer) {
+			AppDeployer deployer, MavenProperties mavenProperties) {
 		Assert.notNull(repository, "repository must not be null");
 		Assert.notNull(registry, "registry must not be null");
 		Assert.notNull(deployer, "deployer must not be null");
 		this.repository = repository;
 		this.registry = registry;
 		this.deployer = deployer;
+		this.mavenProperties = mavenProperties;
 	}
 
 	/**
@@ -195,7 +203,7 @@ public class StreamDeploymentController {
 			currentModule = postProcessLibraryProperties(currentModule);
 
 			AppDefinition definition = new AppDefinition(currentModule.getLabel(), currentModule.getParameters());
-			MavenResource resource = MavenResource.parse(coordinates.toString());
+			MavenResource resource = MavenResource.parse(coordinates.toString(), mavenProperties);
 			AppDeploymentRequest request = new AppDeploymentRequest(definition, resource, moduleDeploymentProperties);
 			this.deployer.deploy(request);
 		}

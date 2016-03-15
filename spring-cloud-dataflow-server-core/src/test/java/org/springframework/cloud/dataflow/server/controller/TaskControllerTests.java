@@ -44,6 +44,7 @@ import org.springframework.cloud.dataflow.core.TaskDefinition;
 import org.springframework.cloud.dataflow.server.configuration.TestDependencies;
 import org.springframework.cloud.dataflow.server.repository.InMemoryTaskDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.TaskDefinitionRepository;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
@@ -78,6 +79,8 @@ public class TaskControllerTests {
 	@Autowired
 	private TaskLauncher taskLauncher;
 
+	private final MavenProperties mavenProperties = new MavenProperties();
+
 	@Before
 	public void setupMockMVC() {
 		this.mockMvc = MockMvcBuilders.webAppContextSetup(wac).defaultRequest(
@@ -92,17 +95,18 @@ public class TaskControllerTests {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testTaskDeploymentControllerConstructorMissingRepository() {
-		new TaskDeploymentController(null, new InMemoryArtifactRegistry(), taskLauncher);
+		new TaskDeploymentController(null, new InMemoryArtifactRegistry(), taskLauncher, mavenProperties);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testTaskDeploymentControllerConstructorMissingRegistry() {
-		new TaskDeploymentController(new InMemoryTaskDefinitionRepository(), null, taskLauncher);
+		new TaskDeploymentController(new InMemoryTaskDefinitionRepository(), null, taskLauncher, mavenProperties);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testTaskDeploymentControllerConstructorMissingDeployer() {
-		new TaskDeploymentController(new InMemoryTaskDefinitionRepository(), new InMemoryArtifactRegistry(), null);
+		new TaskDeploymentController(new InMemoryTaskDefinitionRepository(),
+				new InMemoryArtifactRegistry(), null, mavenProperties);
 	}
 
 	@Test(expected = IllegalArgumentException.class)

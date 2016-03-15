@@ -33,6 +33,7 @@ import org.springframework.cloud.dataflow.server.repository.InMemoryStreamDefini
 import org.springframework.cloud.dataflow.server.repository.InMemoryTaskDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.TaskDefinitionRepository;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.cloud.task.repository.TaskExplorer;
@@ -58,6 +59,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
 @EnableWebMvc
 public class TestDependencies extends WebMvcConfigurationSupport {
 
+	private final MavenProperties mavenProperties = new MavenProperties();
+
 	@Bean
 	public RestControllerAdvice restControllerAdvice() {
 		return new RestControllerAdvice();
@@ -65,7 +68,7 @@ public class TestDependencies extends WebMvcConfigurationSupport {
 
 	@Bean
 	public StreamDeploymentController streamDeploymentController(StreamDefinitionRepository repository, ArtifactRegistry registry) {
-		return new StreamDeploymentController(repository, registry, appDeployer());
+		return new StreamDeploymentController(repository, registry, appDeployer(), mavenProperties);
 	}
 
 	@Bean
@@ -75,7 +78,7 @@ public class TestDependencies extends WebMvcConfigurationSupport {
 
 	@Bean
 	public TaskDeploymentController taskController(TaskDefinitionRepository repository, ArtifactRegistry registry) {
-		return new TaskDeploymentController(repository, registry, taskLauncher());
+		return new TaskDeploymentController(repository, registry, taskLauncher(), mavenProperties);
 	}
 
 	@Bean

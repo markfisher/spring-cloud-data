@@ -20,6 +20,7 @@ import java.util.Collections;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.dataflow.artifact.registry.ArtifactRegistry;
 import org.springframework.cloud.dataflow.completion.StreamCompletionProvider;
 import org.springframework.cloud.dataflow.server.controller.CompletionController;
@@ -30,6 +31,7 @@ import org.springframework.cloud.dataflow.server.controller.ModuleController;
 import org.springframework.cloud.dataflow.server.controller.RestControllerAdvice;
 import org.springframework.cloud.dataflow.server.controller.RootController;
 import org.springframework.cloud.dataflow.server.controller.RuntimeModulesController;
+import org.springframework.cloud.dataflow.server.controller.RuntimeModulesController.AppInstanceController;
 import org.springframework.cloud.dataflow.server.controller.SecurityController;
 import org.springframework.cloud.dataflow.server.controller.StreamDefinitionController;
 import org.springframework.cloud.dataflow.server.controller.StreamDeploymentController;
@@ -37,9 +39,9 @@ import org.springframework.cloud.dataflow.server.controller.TaskDefinitionContro
 import org.springframework.cloud.dataflow.server.controller.TaskDeploymentController;
 import org.springframework.cloud.dataflow.server.controller.TaskExecutionController;
 import org.springframework.cloud.dataflow.server.controller.UiController;
-import org.springframework.cloud.dataflow.server.controller.RuntimeModulesController.AppInstanceController;
 import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;
 import org.springframework.cloud.dataflow.server.repository.TaskDefinitionRepository;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.task.TaskLauncher;
 import org.springframework.cloud.stream.module.metrics.FieldValueCounterRepository;
@@ -80,8 +82,8 @@ public class DataFlowControllerAutoConfiguration {
 
 	@Bean
 	public StreamDeploymentController streamDeploymentController(StreamDefinitionRepository repository,
-			ArtifactRegistry registry, AppDeployer deployer) {
-		return new StreamDeploymentController(repository, registry, deployer);
+			ArtifactRegistry registry, AppDeployer deployer, MavenProperties mavenProperties) {
+		return new StreamDeploymentController(repository, registry, deployer, mavenProperties);
 	}
 
 	@Bean
@@ -92,8 +94,8 @@ public class DataFlowControllerAutoConfiguration {
 
 	@Bean
 	public TaskDeploymentController taskDeploymentController(TaskDefinitionRepository repository,
-			ArtifactRegistry registry, TaskLauncher taskLauncher) {
-		return new TaskDeploymentController(repository, registry, taskLauncher);
+			ArtifactRegistry registry, TaskLauncher taskLauncher, MavenProperties mavenProperties) {
+		return new TaskDeploymentController(repository, registry, taskLauncher, mavenProperties);
 	}
 
 	@Bean
@@ -139,5 +141,14 @@ public class DataFlowControllerAutoConfiguration {
 	@Bean
 	public RestControllerAdvice restControllerAdvice() {
 		return new RestControllerAdvice();
+	}
+
+	@Bean
+	public MavenProperties mavenProperties() {
+		return new MavenConfigurationProperties();
+	}
+
+	@ConfigurationProperties(prefix = "mvn")
+	static class MavenConfigurationProperties extends MavenProperties {
 	}
 }
