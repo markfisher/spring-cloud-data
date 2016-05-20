@@ -25,11 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.dataflow.core.ApplicationType;
-import org.springframework.cloud.dataflow.core.BindingPropertyKeys;
 import org.springframework.cloud.dataflow.core.StreamAppDefinition;
 import org.springframework.cloud.dataflow.core.StreamDefinition;
 import org.springframework.cloud.dataflow.registry.AppRegistry;
 import org.springframework.cloud.dataflow.rest.resource.StreamDefinitionResource;
+import org.springframework.cloud.dataflow.server.DataFlowServerUtil;
 import org.springframework.cloud.dataflow.server.repository.DeploymentIdRepository;
 import org.springframework.cloud.dataflow.server.repository.DeploymentKey;
 import org.springframework.cloud.dataflow.server.repository.DuplicateStreamDefinitionException;
@@ -38,7 +38,6 @@ import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepo
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.app.DeploymentState;
-import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.ExposesResourceFor;
@@ -159,7 +158,7 @@ public class StreamDefinitionController {
 		List<String> errorMessages = new ArrayList<>();
 		for (StreamAppDefinition streamAppDefinition: stream.getAppDefinitions()) {
 			String appName = streamAppDefinition.getRegisteredAppName();
-			ApplicationType appType = determineApplicationType(streamAppDefinition);
+			ApplicationType appType = DataFlowServerUtil.determineApplicationType(streamAppDefinition);
 			if (appRegistry.find(appName, appType) == null) {
 				errorMessages.add(String.format("Application name '%s' with type '%s' does not exist in the app registry.",
 						appName, appType));
@@ -171,31 +170,6 @@ public class StreamDefinitionController {
 		this.repository.save(stream);
 		if (deploy) {
 			deploymentController.deploy(name, null);
-		}
-	}
-
-	/**
-	 * Return the {@link ApplicationType} for a {@link AppDefinition} in the context
-	 * of a defined stream.
-	 *
-	 * @param appDefinition the app for which to determine the type
-	 * @return {@link ApplicationType} for the given app
-	 */
-	static ApplicationType determineApplicationType(StreamAppDefinition appDefinition) {
-		// Parser has already taken care of source/sink destinations, etc
-		boolean hasOutput = appDefinition.getProperties().containsKey(BindingPropertyKeys.OUTPUT_DESTINATION);
-		boolean hasInput = appDefinition.getProperties().containsKey(BindingPropertyKeys.INPUT_DESTINATION);
-		if (hasInput && hasOutput) {
-			return ApplicationType.processor;
-		}
-		else if (hasInput) {
-			return ApplicationType.sink;
-		}
-		else if (hasOutput) {
-			return ApplicationType.source;
-		}
-		else {
-			throw new IllegalStateException(appDefinition.getName() + " had neither input nor output set");
 		}
 	}
 
