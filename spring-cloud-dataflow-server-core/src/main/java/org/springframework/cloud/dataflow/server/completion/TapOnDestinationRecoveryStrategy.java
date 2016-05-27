@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.springframework.cloud.dataflow.completion.CompletionProposal;
 import org.springframework.cloud.dataflow.completion.RecoveryStrategy;
-import org.springframework.cloud.dataflow.core.ArtifactType;
+import org.springframework.cloud.dataflow.core.ApplicationType;
 import org.springframework.cloud.dataflow.core.StreamAppDefinition;
 import org.springframework.cloud.dataflow.core.StreamDefinition;
 import org.springframework.cloud.dataflow.core.dsl.DSLMessage;
@@ -35,6 +35,7 @@ import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepo
  *
  * @author Eric Bottard
  * @author Ilayaperumal Gopinathan
+ * @author Mark Fisher
  */
 public class TapOnDestinationRecoveryStrategy implements RecoveryStrategy<ParseException> {
 
@@ -48,7 +49,7 @@ public class TapOnDestinationRecoveryStrategy implements RecoveryStrategy<ParseE
 	public boolean shouldTrigger(String dslStart, Exception exception) {
 		return dslStart.startsWith(":") && !dslStart.contains(" ") &&
 				(((ParseException)exception).getMessageCode() == DSLMessage.EXPECTED_STREAM_NAME_AFTER_LABEL_COLON ||
-						((ParseException)exception).getMessageCode() == DSLMessage.EXPECTED_MODULENAME);
+						((ParseException)exception).getMessageCode() == DSLMessage.EXPECTED_APPNAME);
 	}
 
 	@Override
@@ -66,7 +67,7 @@ public class TapOnDestinationRecoveryStrategy implements RecoveryStrategy<ParseE
 		if (streamDefinition != null) {
 			CompletionProposal.Factory proposals = CompletionProposal.expanding(":" + streamName + ".");
 			for (StreamAppDefinition appDefinition : streamDefinition.getAppDefinitions()) {
-				ApplicationType appType = DataFlowServerUtil.determineModuleType(appDefinition);
+				ApplicationType appType = DataFlowServerUtil.determineApplicationType(appDefinition);
 				if (appDefinition.getName().startsWith(appName) && !appType.equals(ApplicationType.sink)) {
 					collector.add(proposals.withSuffix(appDefinition.getName()));
 				}
