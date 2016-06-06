@@ -18,56 +18,74 @@ package org.springframework.cloud.dataflow.server.registry;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.sql.DataSource;
 
-import org.springframework.cloud.dataflow.server.repository.AbstractRdbmsKeyValueRepository;
-import org.springframework.cloud.dataflow.server.repository.DeploymentIdRepository;
 import org.springframework.cloud.deployer.resource.registry.UriRegistry;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.Assert;
 
 /**
  * RDBMS implementation of {@link UriRegistry}.
  *
  * @author Ilayaperumal Gopinathan
+ * @author Mark Fisher
  */
-public class RdbmsUriRegistry extends AbstractRdbmsKeyValueRepository<String> implements UriRegistry {
+public class RdbmsUriRegistry implements UriRegistry {
+
+	private static final String TABLE_NAME = "URI_APP_REGISTRY";
+
+	private static final String SELECT_URI_SQL = String.format("select URI from %s where NAME = ?", TABLE_NAME);
+
+	private static final String SELECT_ALL_SQL = String.format("select NAME, URI from %s", TABLE_NAME);
+
+	private static final String UPDATE_SQL = String.format("update %s set URI=? WHERE NAME=?", TABLE_NAME);
+
+	private static final String INSERT_SQL = String.format("insert into %s (NAME, URI) values (?, ?)", TABLE_NAME);
+
+	private static final String DELETE_SQL = String.format("delete from %s where NAME=?", TABLE_NAME);
+
+	private final JdbcTemplate jdbcTemplate;
 
 	public RdbmsUriRegistry(DataSource dataSource) {
-		super(dataSource, "URI_APP_", "REGISTRY", new RowMapper<String>() {
-			@Override
-			public String mapRow(ResultSet resultSet, int i) throws SQLException {
-				return resultSet.getString("NAME") + "=" + resultSet.getString("URI");
-			}
-		}, "NAME", "URI");
+		Assert.notNull(dataSource, "DataSource must not be null");
+		this.jdbcTemplate = new JdbcTemplate(dataSource);
 	}
 
 	@Override
 	public URI find(String name) {
-		String entry = findOne(name);
-		if (entry == null) {
-			return null;
-		}
-		String[] splitEntries = entry.split("=");
-		return toUri(splitEntries[1]);
+		String uriString = jdbcTemplate.queryForObject(SELECT_URI_SQL, String.class, name); 
+		return uriString != null ? toUri(uriString) : null;
 	}
 
 	@Override
 	public Map<String, URI> findAll() {
-		Iterable<String> entries = findAllEntries();
-		Map<String, URI> map = new HashMap<>();
-		for (String entry : entries) {
-			String[] splitEntries = entry.split("=");
-			map.put(splitEntries[0], toUri(splitEntries[1]));
+		Map<String, URI> uriMap = new HashMap<>();
+		Map<String, Object> resultMap = jdbcTemplate.queryForMap(SELECT_ALL_SQL);
+		for (Map.Entry<String, Object> entry : resultMap.entrySet()) {
+			uriMap.put(entry.getKey(), toUri(entry.getValue().toString()));
 		}
-		return map;
+		return uriMap;
+	}
+
+	@Override
+	public void register(String name, URI uri) {
+		String uriString = uri.toString();
+		if (find(name) != null) {
+			jdbcTemplate.update(UPDATE_SQL, new Object[] {uriString, name}, new int[] {Types.VARCHAR, Types.VARCHAR});
+		}
+		else {
+			jdbcTemplate.update(INSERT_SQL, new Object[] {name, uriString}, new int[] {Types.VARCHAR, Types.VARCHAR});
+		}
+	}
+
+	@Override
+	public void unregister(String name) {
+		Assert.hasText(name, "name must not be empty nor null");
+		jdbcTemplate.update(DELETE_SQL, name);
 	}
 
 	/**
@@ -84,41 +102,5 @@ public class RdbmsUriRegistry extends AbstractRdbmsKeyValueRepository<String> im
 		catch (URISyntaxException e) {
 			throw new IllegalStateException(e);
 		}
-	}
-
-	@Override
-	public void register(String name, URI uri) {
-		save(name, uri.toString());
-	}
-
-	@Override
-	public void unregister(String name) {
-		delete(name);
-	}
-
-	public void save(String name, String uriString) {
-		if (find(name) != null) {
-			Object[] updateParameters = new Object[] { uriString, name };
-			jdbcTemplate.update(updateValue, updateParameters, new int[] { Types.VARCHAR, Types.VARCHAR });
-		}
-		else {
-			Object[] insertParameters = new Object[] { name, uriString };
-			jdbcTemplate.update(saveRow, insertParameters, new int[]{Types.VARCHAR, Types.VARCHAR});
-		}
-	}
-
-	public String findOne(String name) {
-		Assert.hasText(name, "name must not be empty nor null");
-		try {
-			return jdbcTemplate.queryForObject(findAllWhereClauseByKey, rowMapper, name);
-		}
-		catch (EmptyResultDataAccessException e) {
-			return null;
-		}
-	}
-
-	public void delete(String name) {
-		Assert.hasText(name, "name must not be empty nor null");
-		jdbcTemplate.update(deleteFromTableByKey, name);
 	}
 }
