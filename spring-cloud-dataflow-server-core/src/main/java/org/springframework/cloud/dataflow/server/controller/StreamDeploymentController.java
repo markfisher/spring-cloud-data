@@ -16,10 +16,12 @@
 
 package org.springframework.cloud.dataflow.server.controller;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,6 +45,7 @@ import org.springframework.cloud.dataflow.server.repository.DeploymentIdReposito
 import org.springframework.cloud.dataflow.server.repository.DeploymentKey;
 import org.springframework.cloud.dataflow.server.repository.NoSuchStreamDefinitionException;
 import org.springframework.cloud.dataflow.server.repository.StreamDefinitionRepository;
+import org.springframework.cloud.deployer.resource.maven.MavenResource;
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.app.AppStatus;
 import org.springframework.cloud.deployer.spi.app.DeploymentState;
@@ -52,6 +55,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.hateoas.ExposesResourceFor;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -232,7 +236,16 @@ public class StreamDeploymentController {
 		Iterator<StreamAppDefinition> iterator = stream.getDeploymentOrderIterator();
 		int nextAppCount = 0;
 		boolean isDownStreamAppPartitioned = false;
+
+		List<String> functionClassnames = new ArrayList<>();
+		List<String> functionLocations = new ArrayList<>();
+		String functionOutputDestination = null;
+		int index = stream.getAppDefinitions().size();
 		while (iterator.hasNext()) {
+			index--;
+			boolean composedFunction = false;
+			boolean tailFunction = false;
+			boolean middleFunction = false;
 			StreamAppDefinition currentApp = iterator.next();
 			ApplicationType type = DataFlowServerUtil.determineApplicationType(currentApp);
 
@@ -240,7 +253,35 @@ public class StreamDeploymentController {
 			Assert.notNull(registration, String.format("no application '%s' of type '%s' exists in the registry",
 					currentApp.getName(), type));
 
+			logger.info(String.format("Downloading resource URI [%s]", registration.getUri()));
+			Resource appResource = registration.getResource();
+			Resource metadataResource = registration.getMetadataResource();
+
 			Map<String, String> appDeployTimeProperties = extractAppProperties(currentApp, streamDeploymentProperties);
+	
+			if (type.equals(ApplicationType.processor) && registration.getName().contains("-")) {
+				tailFunction = (functionClassnames.isEmpty());
+				functionClassnames.add(0, registration.getName().replaceAll("-", "."));
+				Assert.isTrue(appResource instanceof MavenResource, "only Maven resources currently supported for function processor");
+				MavenResource mavenResource = (MavenResource) appResource;
+				functionLocations.add(0, String.format("maven://%s:%s:%s", mavenResource.getGroupId(), mavenResource.getArtifactId(), mavenResource.getVersion()));
+				//functionLocations.add("file:" + appResource.getFile().getAbsolutePath());
+
+				if (index == 1) {
+					composedFunction = true;
+					appDeployTimeProperties.put("function.classname", StringUtils.collectionToCommaDelimitedString(functionClassnames));
+					appDeployTimeProperties.put("function.resource", StringUtils.collectionToCommaDelimitedString(functionLocations));
+					appResource = new MavenResource.Builder()
+							.groupId("org.springframework.cloud")
+							.artifactId("spring-cloud-function-stream-processor")
+							.version("1.0.0.BUILD-SNAPSHOT")
+							.build();
+				}
+				else if (!tailFunction) {
+					middleFunction = true;
+				}
+			}
+
 			Map<String, String> deployerDeploymentProperties = DeploymentPropertiesUtils
 					.extractAndQualifyDeployerProperties(streamDeploymentProperties, currentApp.getName());
 			deployerDeploymentProperties.put(AppDeployer.GROUP_PROPERTY_KEY, currentApp.getStreamName());
@@ -269,10 +310,6 @@ public class StreamDeploymentController {
 			nextAppCount = getInstanceCount(deployerDeploymentProperties);
 			isDownStreamAppPartitioned = isPartitionedConsumer(appDeployTimeProperties, upstreamAppSupportsPartition);
 
-			logger.info(String.format("Downloading resource URI [%s]", registration.getUri()));
-			Resource appResource = registration.getResource();
-			Resource metadataResource = registration.getMetadataResource();
-
 			// add properties needed for metrics system
 			appDeployTimeProperties.put(DataFlowPropertyKeys.STREAM_NAME, currentApp.getStreamName());
 			appDeployTimeProperties.put(DataFlowPropertyKeys.STREAM_APP_LABEL, currentApp.getName());
@@ -283,11 +320,22 @@ public class StreamDeploymentController {
 
 			// Merge *definition time* app properties with *deployment time* properties
 			// and expand them to their long form if applicable
+			if (composedFunction) {
+				appDeployTimeProperties.put(BindingPropertyKeys.OUTPUT_DESTINATION, functionOutputDestination);
+			}
 			AppDefinition revisedDefinition = mergeAndExpandAppProperties(currentApp, metadataResource,
 					appDeployTimeProperties);
 
+			if (tailFunction) {
+				functionOutputDestination = revisedDefinition.getProperties().get(BindingPropertyKeys.OUTPUT_DESTINATION);
+				continue;
+			}
+			if (middleFunction) {
+				continue;
+			}
 			AppDeploymentRequest request = new AppDeploymentRequest(revisedDefinition, appResource,
 					deployerDeploymentProperties);
+			System.out.println("deploying " + request.getDefinition().getName() + " \nwith props:\n" + request.getDefinition().getProperties() + "\nand deploymentprops:\n" + request.getDeploymentProperties());
 			try {
 				logger.info(String.format(deployLoggingString, request.getDefinition().getName(),
 						currentApp.getStreamName(), registration.getUri()));
